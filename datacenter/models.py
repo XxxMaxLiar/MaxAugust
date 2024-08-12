@@ -33,10 +33,11 @@ class Visit(models.Model):
 
 def get_duration():
     now_time = django.utils.timezone.localtime()
-    no_leave = Visit.objects.filter(leaved_at=None)
-    for leave in no_leave:
-        who_entered = leave.passcard.owner_name
-        entered_at = leave.entered_at
+    no_leave_visits = Visit.objects.filter(leaved_at=None)
+    
+    for no_leave_visit in no_leave_visits:
+        who_entered = no_leave_visit.passcard.owner_name
+        entered_at = no_leave_visit.entered_at
         duration = now_time - entered_at
         return who_entered, entered_at, duration
     
@@ -46,3 +47,24 @@ def format_duration():
     return {'who_entered': who_entered, 'entered_at': entered_at, 'duration': duration}
 
 
+def is_visit_long(n):
+    now_time = django.utils.timezone.localtime()
+    passcard = Passcard.objects.all[n]
+    visits = Visit.objects.filter(passcard=passcard)
+    for visit in visits:
+        entered_time = visit.entered_at
+        leaved_time = visit.leaved_at
+
+        if leaved_time == None: #проверка, что человек находится в хранилище
+            duration = now_time - entered_time
+            return entered_time, duration, 'Человек находится в хранилище'
+        
+        delta = leaved_time-entered_time
+        if delta/60 > 60:       #проверка, что человек находится дольша часа в хранилище
+            is_strange = True   #это странно - True
+            return entered_time, delta, is_strange
+        
+        if delta/60 <= 60:      #проверка, что человек находится не больше часа в хранилище
+            is_strange = False  #это странно - False
+            return entered_time, delta, is_strange
+        

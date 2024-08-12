@@ -6,7 +6,7 @@ from django.shortcuts import render
 def passcard_info_view(request, passcode):
     passcard = Passcard.objects.all()[0]
     # Программируем здесь
-
+    
     this_passcard_visits = [
         {
             'entered_at': '11-04-2018',
