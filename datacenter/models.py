@@ -1,5 +1,6 @@
 from django.db import models
-
+import datetime
+import django
 
 class Passcard(models.Model):
     is_active = models.BooleanField(default=False)
@@ -28,3 +29,20 @@ class Visit(models.Model):
                 if self.leaved_at else 'not leaved'
             )
         )
+
+
+def get_duration():
+    now_time = django.utils.timezone.localtime()
+    no_leave = Visit.objects.filter(leaved_at=None)
+    for leave in no_leave:
+        who_entered = leave.passcard.owner_name
+        entered_at = leave.entered_at
+        duration = now_time - entered_at
+        return who_entered, entered_at, duration
+    
+
+def format_duration():
+    who_entered, entered_at, duration = get_duration()
+    return {'who_entered': who_entered, 'entered_at': entered_at, 'duration': duration}
+
+
