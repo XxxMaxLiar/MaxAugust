@@ -1,7 +1,8 @@
 from django.db import models
 import datetime
 import django
-
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 class Passcard(models.Model):
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
@@ -31,7 +32,13 @@ class Visit(models.Model):
         )
 
 
+
+
+
+
+
 def get_duration():
+    a = []
     now_time = django.utils.timezone.localtime()
     no_leave_visits = Visit.objects.filter(leaved_at=None)
     
@@ -39,32 +46,34 @@ def get_duration():
         who_entered = no_leave_visit.passcard.owner_name
         entered_at = no_leave_visit.entered_at
         duration = now_time - entered_at
-        return who_entered, entered_at, duration
-    
+        b = {'who_entered': who_entered, 'entered_at': entered_at, 'duration': duration}
+        a.append(b)
+    return a
 
-def format_duration():
-    who_entered, entered_at, duration = get_duration()
-    return {'who_entered': who_entered, 'entered_at': entered_at, 'duration': duration}
-
-
-def is_visit_long(n):
+passcode = '5a746f24-2a46-4d4e-a076-d56689c8dcb7' #здесь вводим id человека, которого хотим найти
+def is_visit_long():
+    a = []
     now_time = django.utils.timezone.localtime()
-    passcard = Passcard.objects.all[n]
-    visits = Visit.objects.filter(passcard=passcard)
+    crud_post = Passcard.objects.get(passcode = passcode)
+    visits = Visit.objects.filter(passcard = crud_post)
     for visit in visits:
         entered_time = visit.entered_at
         leaved_time = visit.leaved_at
-
         if leaved_time == None: #проверка, что человек находится в хранилище
-            duration = now_time - entered_time
-            return entered_time, duration, 'Человек находится в хранилище'
-        
-        delta = leaved_time-entered_time
-        if delta/60 > 60:       #проверка, что человек находится дольша часа в хранилище
+            delta = now_time - entered_time
+            is_strange = True
+            b = {'entered_at': entered_time, 'duration': delta, 'is_strange': is_strange}
+            a.append(b)
+            continue
+        delta = leaved_time - entered_time
+        if delta.seconds/60 > 60:       #проверка, что человек находится дольша часа в хранилище
             is_strange = True   #это странно - True
-            return entered_time, delta, is_strange
-        
-        if delta/60 <= 60:      #проверка, что человек находится не больше часа в хранилище
+            b = {'entered_at': entered_time, 'duration': delta, 'is_strange': is_strange}
+            a.append(b)
+            continue
+        if delta.seconds/60 <= 60:      #проверка, что человек находится не больше часа в хранилище
+            delta = leaved_time-entered_time
             is_strange = False  #это странно - False
-            return entered_time, delta, is_strange
-        
+            b = {'entered_at': entered_time, 'duration': delta, 'is_strange': is_strange}
+            a.append(b)
+    return a
